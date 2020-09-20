@@ -149,6 +149,7 @@ BOOL InitListViewColumns(HWND hWndListView, int colCount)
 void loadMapToListView(HWND hDlg)
 {
     HWND hList = ::GetDlgItem(hDlg, IDC_LIST_MAP);
+    ListView_SetExtendedListViewStyleEx(hList, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
     InitListViewColumns(hList, 2);
 
     TCHAR lvText[MAX_PATH];
