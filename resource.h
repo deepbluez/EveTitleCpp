@@ -11,6 +11,8 @@
 #define IDC_EVETITLE                    109
 #define IDR_MAINFRAME                   128
 #define IDB_BITMAP1                     129
+#define IDS_LV_MAP_FIRSTCOLUMN          130
+#define IDS_STRING131                   131
 #define IDC_STATIC_AUTOMODE             1000
 #define IDC_LIST_MAP                    1001
 #define ID_32771                        32771
@@ -22,7 +24,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        130
+#define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32773
 #define _APS_NEXT_CONTROL_VALUE         1002
 #define _APS_NEXT_SYMED_VALUE           110

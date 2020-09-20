@@ -1,12 +1,13 @@
 ﻿// EVETitle.cpp : 定义应用程序的入口点。
 //
 
-#include "atlstr.h"
-#include <map>
-
 #include "framework.h"
+#include <commctrl.h>
 #include "EVETitle.h"
 #include "SystemTraySDK.h"
+
+#include <map>
+#include <algorithm>
 
 #define MAX_LOADSTRING 100
 #define WM_TRAY_MESSAGE (WM_APP + 101)
@@ -25,6 +26,8 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 struct Config
 {
+    CString logoutTitle;
+    CString logoutModify;
     CString titleCheck;
     CString windowClass;
     bool autoChange;
@@ -75,14 +78,18 @@ void UpdateTitle(HWND gameWnd)
     if (err != ERROR_SUCCESS)
         return;
 
-    if (origTitle.Find(config.titleCheck) == 0)
+	if(config.logoutTitle == origTitle && !config.logoutModify.IsEmpty())
+	{
+        ::SetWindowText(gameWnd, config.logoutModify);
+	}
+    else if (origTitle.Find(config.titleCheck) == 0)
     {
         CString charName = origTitle.Mid(config.titleCheck.GetLength());
         if (config.nameMap.count(charName) != 0)
             charName = config.nameMap[charName];
     	
         CString newTitle = config.prefix + charName + config.suffix;
-        //::SetWindowText(gameWnd, newTitle);
+        ::SetWindowText(gameWnd, newTitle);
         ::OutputDebugString(newTitle + _T("\n"));
     }
 }
@@ -99,6 +106,80 @@ void UpdateAllTitle()
     } while (found != NULL);
 }
 
+// InitListViewColumns: Adds columns to a list-view control.
+// hWndListView:        Handle to the list-view control. 
+// Returns TRUE if successful, and FALSE otherwise. 
+BOOL InitListViewColumns(HWND hWndListView, int colCount)
+{
+    WCHAR szText[256];     // Temporary buffer.
+    LVCOLUMN lvc;
+    int iCol;
+
+    // Initialize the LVCOLUMN structure.
+    // The mask specifies that the format, width, text,
+    // and subitem members of the structure are valid.
+    lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+
+    // Add the columns.
+    for (iCol = 0; iCol < colCount; iCol++)
+    {
+        lvc.iSubItem = iCol;
+        lvc.pszText = szText;
+        lvc.cx = 100;               // Width of column in pixels.
+
+        if (iCol < 2)
+            lvc.fmt = LVCFMT_LEFT;  // Left-aligned column.
+        else
+            lvc.fmt = LVCFMT_RIGHT; // Right-aligned column.
+
+        // Load the names of the column headings from the string resources.
+        LoadString(hInst,
+            IDS_LV_MAP_FIRSTCOLUMN + iCol,
+            szText,
+            sizeof(szText) / sizeof(szText[0]));
+
+        // Insert the columns into the list view.
+        if (ListView_InsertColumn(hWndListView, iCol, &lvc) == -1)
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+void loadMapToListView(HWND hDlg)
+{
+    HWND hList = ::GetDlgItem(hDlg, IDC_LIST_MAP);
+    InitListViewColumns(hList, 2);
+
+    TCHAR lvText[MAX_PATH];
+    LVITEM lvI;
+
+    // Initialize LVITEM members that are common to all items.
+    lvI.iItem = 0;
+    lvI.pszText = lvText;
+    lvI.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_STATE;
+    lvI.stateMask = 0;
+    lvI.iSubItem = 0;
+    lvI.state = 0;
+
+	if(config.nameMap.empty())
+	{
+        _tcscpy_s(lvText, _T("没有数据"));
+        ListView_InsertItem(hList, &lvI);
+	} else
+	{
+        int i = 0;
+        std::for_each(config.nameMap.begin(), config.nameMap.end(), [&i, &lvI, &lvText, hList](std::map<CString, CString>::value_type& m)
+        {
+            lvI.iItem = i++;
+            _tcscpy_s(lvText, MAX_PATH, m.first);
+            const int newIndex = ListView_InsertItem(hList, &lvI);
+
+            _tcscpy_s(lvText, m.second);
+            ListView_SetItemText(hList, newIndex, 1, lvText);
+        });
+	}
+}
 
 // “关于”框的消息处理程序。
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -107,6 +188,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_INITDIALOG:
+        loadMapToListView(hDlg);
         if(config.autoChange)
         {
             HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_EVETITLE));
@@ -180,13 +262,21 @@ void loadConfig(HINSTANCE hInstance)
 
     iniPath = exePath.Left(pos) + _T("\\EVETitle.ini");
 	
+    GetPrivateProfileString(GENERAL_GROUP, _T("logout_title"), _T("星战前夜：晨曦"), config.logoutTitle.GetBuffer(MAX_PATH), MAX_PATH, iniPath);
+    config.logoutTitle.ReleaseBuffer();
+    trimString(config.logoutTitle);
+
+    GetPrivateProfileString(GENERAL_GROUP, _T("logout_modify"), _T(""), config.logoutModify.GetBuffer(MAX_PATH), MAX_PATH, iniPath);
+    config.logoutModify.ReleaseBuffer();
+    trimString(config.logoutModify);
+
     GetPrivateProfileString(GENERAL_GROUP, _T("title_check"), _T("星战前夜：晨曦 - "), config.titleCheck.GetBuffer(MAX_PATH), MAX_PATH, iniPath);
     config.titleCheck.ReleaseBuffer();
     trimString(config.titleCheck);
 
-	//GetPrivateProfileString(GENERAL_GROUP, _T("class"), _T("triuiScreen"), config.windowClass.GetBuffer(MAX_PATH), MAX_PATH, iniPath);
-    //config.windowClass.ReleaseBuffer();
-    config.windowClass = _T("triuiScreen");
+	GetPrivateProfileString(GENERAL_GROUP, _T("class"), _T("triuiScreen"), config.windowClass.GetBuffer(MAX_PATH), MAX_PATH, iniPath);
+    config.windowClass.ReleaseBuffer();
+    //config.windowClass = _T("triuiScreen");
 
     config.autoChange = !!GetPrivateProfileInt(GENERAL_GROUP, _T("auto"), 0, iniPath);
 
