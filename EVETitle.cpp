@@ -6,8 +6,11 @@
 
 #include "framework.h"
 #include "EVETitle.h"
+#include "SystemTraySDK.h"
 
 #define MAX_LOADSTRING 100
+#define WM_TRAY_MESSAGE (WM_APP + 101)
+#define ICON_ID        IDC_EVETITLE
 
 // 全局变量:
 HINSTANCE hInst;                                // 当前实例
@@ -34,6 +37,8 @@ struct Config
 // 全局配置
 Config config;
 
+// 托盘图标类
+CSystemTray g_trayIcon;
 
 void loadConfig(HINSTANCE hInstance);
 
@@ -45,6 +50,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
+    hInst = hInstance;
 
     loadConfig(hInstance);
 
@@ -95,23 +101,42 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_INITDIALOG:
         if(config.autoChange)
         {
+            HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_EVETITLE));
+            g_trayIcon.Create(hInst, nullptr, WM_TRAY_MESSAGE, _T("EVETile\nPowered by 故乡的星"), hIcon, ICON_ID);
+            g_trayIcon.SetTargetWnd(hDlg);
+
+            SetDlgItemText(hDlg, IDC_STATIC_AUTOMODE, _T("自动导航启动"));
+            SetDlgItemText(hDlg, IDOK, _T("隐藏到后台"));
+        	
             ::SetTimer(hDlg, 2, config.interval * 1000, NULL);
         }
         return (INT_PTR)TRUE;
 
     case WM_COMMAND:
-    	if (LOWORD(wParam) == IDOK)
-        {
-            UpdateAllTitle();
-            if (config.autoChange)
-                ShowWindow(hDlg, SW_HIDE);
-            else
-				EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        } else if(LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-        }
+		    switch (LOWORD(wParam))
+    		{
+            case IDOK:
+                UpdateAllTitle();
+                if (config.autoChange)
+                    ShowWindow(hDlg, SW_HIDE);
+                else
+                    EndDialog(hDlg, LOWORD(wParam));
+                return (INT_PTR)TRUE;
+            case IDCANCEL:
+                g_trayIcon.RemoveIcon();
+                EndDialog(hDlg, LOWORD(wParam));
+                break;
+            case ID_SHOW_WINDOW:
+                ::ShowWindow(hDlg, SW_SHOW);
+                break;
+            case IDM_EXIT:
+                ::PostMessage(hDlg, WM_CLOSE, 0, 0);
+                break;
+            }
+            break;
+    case WM_CLOSE:
+        g_trayIcon.RemoveIcon();
+        EndDialog(hDlg, 0);
         break;
 
     case WM_TIMER:

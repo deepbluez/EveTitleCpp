@@ -27,9 +27,15 @@
     <ClInclude Include="EVETitle.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="SystemTraySDK.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EVETitle.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SystemTraySDK.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -43,6 +49,9 @@
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="EVETitle.ico">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="about.bmp">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>
