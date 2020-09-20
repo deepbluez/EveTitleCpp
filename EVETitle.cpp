@@ -52,6 +52,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
     hInst = hInstance;
 
+    ::CreateMutex(NULL, TRUE, _T("EVETitle_Singal_Mutex"));
+    DWORD err = ::GetLastError();
+	if(err != ERROR_SUCCESS)
+	{
+        MessageBox(NULL, _T("已启动了另一个 EVETitle"), _T("提示"), MB_OK | MB_ICONWARNING);
+        return 1;
+	}
+
     loadConfig(hInstance);
 
     DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), NULL, About);
