@@ -182,6 +182,42 @@ void loadMapToListView(HWND hDlg)
 	}
 }
 
+void processLvNotify(HWND hDlg, WPARAM wParam, LPARAM lParam)
+{
+    auto nmhdr = reinterpret_cast<LPNMHDR>(lParam);
+	if(nmhdr == nullptr)
+        return;
+
+	switch(nmhdr->code)
+	{
+    case NM_DBLCLK:
+	    {
+		    auto lpnmitem = reinterpret_cast<LPNMITEMACTIVATE>(lParam);
+    		if(lpnmitem->iItem != -1)
+    		{
+                CString itemText;
+                ListView_GetItemText(lpnmitem->hdr.hwndFrom, lpnmitem->iItem, 0, itemText.GetBuffer(MAX_PATH), MAX_PATH);
+                itemText.ReleaseBuffer();
+
+                if (itemText.IsEmpty())
+                    return;
+
+                if (OpenClipboard(hDlg))
+                {
+                    EmptyClipboard();
+                    size_t cbStr = (itemText.GetLength() + 1) * sizeof(TCHAR);
+                    HGLOBAL hData = GlobalAlloc(GMEM_MOVEABLE, cbStr);
+					memcpy_s(GlobalLock(hData), cbStr, itemText.LockBuffer(), cbStr);
+                    GlobalUnlock(hData);
+                    itemText.UnlockBuffer();
+                    SetClipboardData(CF_UNICODETEXT, hData);
+                    CloseClipboard();
+                }
+    		}
+	    }
+	}
+}
+
 // “关于”框的消息处理程序。
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -225,6 +261,9 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
             }
             break;
+    case WM_NOTIFY:
+        processLvNotify(hDlg, wParam, lParam);
+        break;
     case WM_CLOSE:
         g_trayIcon.RemoveIcon();
         EndDialog(hDlg, 0);
