@@ -193,7 +193,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         if(config.autoChange)
         {
             HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_EVETITLE));
-            g_trayIcon.Create(hInst, nullptr, WM_TRAY_MESSAGE, _T("EVETile\nPowered by 故乡的星"), hIcon, ICON_ID);
+            g_trayIcon.Create(hInst, nullptr, WM_TRAY_MESSAGE, _T("EVETile\nPowered by 更深的蓝"), hIcon, ICON_ID);
             g_trayIcon.SetTargetWnd(hDlg);
 
             SetDlgItemText(hDlg, IDC_STATIC_AUTOMODE, _T("自动导航启动"));
